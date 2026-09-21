@@ -1,0 +1,3566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>For Zimal — A Little Birthday World</title>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:auto;
+    background:#05020c;
+}
+
+body{
+    overflow-x:hidden;
+    background:#05020c;
+    color:white;
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+#canvas{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    z-index:0;
+    display:block;
+}
+
+#scrollSpace{
+    height:850vh;
+    width:100%;
+    pointer-events:none;
+}
+
+#ui{
+    position:fixed;
+    inset:0;
+    z-index:5;
+    pointer-events:none;
+}
+
+#vignette{
+    position:absolute;
+    inset:0;
+    background:
+        radial-gradient(circle at center,
+        transparent 25%,
+        rgba(0,0,0,.08) 55%,
+        rgba(0,0,0,.65) 100%);
+}
+
+#grain{
+    position:absolute;
+    inset:-50%;
+    opacity:.055;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
+    animation:grain .18s steps(2) infinite;
+}
+
+@keyframes grain{
+    0%{transform:translate(0,0)}
+    25%{transform:translate(2%,1%)}
+    50%{transform:translate(-1%,2%)}
+    75%{transform:translate(1%,-2%)}
+    100%{transform:translate(0,0)}
+}
+
+#intro{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    transition:
+        opacity .8s ease,
+        transform 1s cubic-bezier(.2,.8,.2,1);
+}
+
+.intro-inner{
+    width:min(900px,90vw);
+}
+
+.small-line{
+    font-size:clamp(10px,1.2vw,15px);
+    letter-spacing:.45em;
+    text-transform:uppercase;
+    opacity:.55;
+    margin-bottom:25px;
+}
+
+#introTitle{
+    font-size:clamp(45px,9vw,125px);
+    line-height:.86;
+    font-weight:900;
+    letter-spacing:-.07em;
+    text-transform:uppercase;
+    background:linear-gradient(120deg,#fff,#ffd5f4,#d7c7ff,#fff);
+    background-size:250% 250%;
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    animation:shine 5s ease infinite;
+}
+
+@keyframes shine{
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
+}
+
+.intro-sub{
+    margin-top:35px;
+    font-size:clamp(13px,1.8vw,20px);
+    letter-spacing:.15em;
+    opacity:.65;
+}
+
+#scrollHint{
+    position:absolute;
+    bottom:35px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:11px;
+    letter-spacing:.3em;
+    opacity:.55;
+    text-transform:uppercase;
+    animation:bounce 2s infinite;
+}
+
+@keyframes bounce{
+    0%,100%{transform:translate(-50%,0);opacity:.35}
+    50%{transform:translate(-50%,8px);opacity:.8}
+}
+
+#chapter{
+    position:absolute;
+    top:35px;
+    left:35px;
+    font-size:10px;
+    letter-spacing:.3em;
+    text-transform:uppercase;
+    opacity:.45;
+}
+
+#progress{
+    position:absolute;
+    top:35px;
+    right:35px;
+    width:70px;
+    height:2px;
+    background:rgba(255,255,255,.16);
+    overflow:hidden;
+}
+
+#progressBar{
+    width:0%;
+    height:100%;
+    background:white;
+    transform-origin:left;
+}
+
+#story{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:30px;
+}
+
+.story-box{
+    width:min(850px,90vw);
+    opacity:0;
+    transform:translateY(30px) scale(.98);
+    transition:
+        opacity .8s ease,
+        transform 1s cubic-bezier(.2,.8,.2,1);
+}
+
+.story-box.visible{
+    opacity:1;
+    transform:translateY(0) scale(1);
+}
+
+.story-kicker{
+    font-size:10px;
+    letter-spacing:.4em;
+    text-transform:uppercase;
+    opacity:.45;
+    margin-bottom:22px;
+}
+
+.story-text{
+    font-size:clamp(25px,4.5vw,62px);
+    line-height:1.08;
+    font-weight:700;
+    letter-spacing:-.04em;
+}
+
+.story-small{
+    margin-top:25px;
+    font-size:clamp(12px,1.5vw,17px);
+    line-height:1.7;
+    opacity:.55;
+    max-width:650px;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+#letterCounter{
+    margin-top:30px;
+    font-size:10px;
+    letter-spacing:.25em;
+    opacity:.3;
+}
+
+#favorites{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    opacity:0;
+    transition:opacity .8s ease;
+}
+
+.favorite-grid{
+    width:min(850px,88vw);
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+}
+
+.favorite-card{
+    min-height:130px;
+    border:1px solid rgba(255,255,255,.13);
+    background:rgba(255,255,255,.045);
+    backdrop-filter:blur(15px);
+    padding:25px;
+    border-radius:18px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+}
+
+.favorite-label{
+    font-size:9px;
+    letter-spacing:.3em;
+    opacity:.4;
+    text-transform:uppercase;
+    margin-bottom:12px;
+}
+
+.favorite-value{
+    font-size:clamp(17px,2vw,25px);
+    font-weight:700;
+}
+
+#final{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    opacity:0;
+    transform:scale(.96);
+    transition:
+        opacity 1.2s ease,
+        transform 1.5s cubic-bezier(.2,.8,.2,1);
+    padding:30px;
+}
+
+#final.active{
+    opacity:1;
+    transform:scale(1);
+}
+
+#giftReturn{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    opacity:0;
+    transform:translateY(24px) scale(.97);
+    transition:opacity 1s ease,transform 1s cubic-bezier(.2,.8,.2,1);
+    pointer-events:none;
+    padding:30px;
+}
+
+#giftReturn.active{
+    opacity:1;
+    transform:translateY(0) scale(1);
+}
+
+.gift-return-inner{
+    width:min(760px,90vw);
+}
+
+.gift-return-kicker{
+    font-size:10px;
+    letter-spacing:.4em;
+    text-transform:uppercase;
+    opacity:.45;
+    margin-bottom:22px;
+}
+
+.gift-return-title{
+    font-size:clamp(34px,7vw,88px);
+    line-height:.95;
+    font-weight:900;
+    letter-spacing:-.06em;
+}
+
+.gift-return-copy{
+    margin-top:28px;
+    font-size:clamp(13px,1.6vw,18px);
+    line-height:1.7;
+    opacity:.6;
+}
+
+#giftModal{
+    position:fixed;
+    inset:0;
+    z-index:25;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    background:rgba(7,2,18,.78);
+    backdrop-filter:blur(16px);
+    pointer-events:auto;
+}
+
+#giftModal.open{
+    display:flex;
+}
+
+.gift-scroll{
+    position:relative;
+    width:min(560px,92vw);
+    padding:48px 42px 42px;
+    color:#351b32;
+    text-align:center;
+    background:linear-gradient(135deg,#fff8e8,#f6dcae 55%,#fff1d0);
+    border:1px solid rgba(255,255,255,.8);
+    box-shadow:0 28px 90px rgba(0,0,0,.5);
+    border-radius:4px 18px 5px 20px;
+}
+
+.gift-scroll:before,
+.gift-scroll:after{
+    content:"";
+    position:absolute;
+    left:16px;
+    right:16px;
+    height:8px;
+    border-radius:100%;
+    background:rgba(137,74,57,.18);
+}
+
+.gift-scroll:before{top:18px}
+.gift-scroll:after{bottom:18px}
+
+.gift-scroll-kicker{
+    font-size:10px;
+    letter-spacing:.35em;
+    text-transform:uppercase;
+    opacity:.58;
+}
+
+.gift-scroll-title{
+    margin-top:18px;
+    font-family:Georgia,serif;
+    font-size:clamp(27px,5vw,46px);
+    line-height:1;
+}
+
+.gift-scroll-copy{
+    margin-top:20px;
+    font-family:Georgia,serif;
+    font-size:clamp(16px,2vw,21px);
+    line-height:1.65;
+}
+
+#claimBot,
+#closeGift{
+    margin-top:28px;
+    padding:11px 18px;
+    border:1px solid rgba(53,27,50,.45);
+    border-radius:100px;
+    background:transparent;
+    color:#351b32;
+    font-size:10px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    cursor:pointer;
+}
+
+#claimBot{display:none;background:#351b32;color:#fff8e8}
+
+#giftModal.claim-mode #claimBot{display:inline-block}
+#giftModal.claim-mode #closeGift{margin-left:8px}
+
+.final-inner{
+    width:min(900px,92vw);
+}
+
+.final-big{
+    font-size:clamp(34px,7vw,95px);
+    font-weight:900;
+    line-height:.92;
+    letter-spacing:-.065em;
+}
+
+.final-small{
+    margin-top:30px;
+    font-size:clamp(13px,1.5vw,18px);
+    line-height:1.8;
+    opacity:.55;
+}
+
+.final-sign{
+    margin-top:45px;
+    font-size:10px;
+    letter-spacing:.4em;
+    opacity:.35;
+    text-transform:uppercase;
+}
+
+#music{
+    pointer-events:auto;
+    position:absolute;
+    bottom:30px;
+    right:30px;
+    border:1px solid rgba(255,255,255,.18);
+    background:rgba(0,0,0,.2);
+    color:white;
+    backdrop-filter:blur(12px);
+    padding:11px 15px;
+    border-radius:100px;
+    font-size:10px;
+    letter-spacing:.15em;
+    cursor:pointer;
+    text-transform:uppercase;
+}
+
+#music:hover{
+    background:rgba(255,255,255,.1);
+}
+
+#photoModal{
+    position:fixed;
+    inset:0;
+    z-index:20;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,0,0,.82);
+    backdrop-filter:blur(18px);
+    pointer-events:auto;
+    padding:25px;
+}
+
+#photoModal.open{
+    display:flex;
+}
+
+.modal-inner{
+    width:min(700px,92vw);
+    text-align:center;
+}
+
+#modalImage{
+    max-width:100%;
+    max-height:70vh;
+    object-fit:contain;
+    border-radius:18px;
+    box-shadow:0 30px 100px rgba(0,0,0,.6);
+}
+
+#modalCaption{
+    margin-top:18px;
+    opacity:.6;
+    font-size:12px;
+    letter-spacing:.1em;
+}
+
+#closeModal{
+    margin-top:20px;
+    padding:10px 18px;
+    background:transparent;
+    border:1px solid rgba(255,255,255,.2);
+    border-radius:100px;
+    color:white;
+    cursor:pointer;
+}
+
+#loading{
+    position:fixed;
+    inset:0;
+    z-index:50;
+    background:#05020c;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:opacity 1s ease;
+}
+
+.loading-inner{
+    text-align:center;
+}
+
+.loading-name{
+    font-size:12px;
+    letter-spacing:.45em;
+    text-transform:uppercase;
+    opacity:.7;
+}
+
+.loading-bar{
+    width:180px;
+    height:1px;
+    background:rgba(255,255,255,.15);
+    margin-top:20px;
+    overflow:hidden;
+}
+
+#loadFill{
+    width:0%;
+    height:100%;
+    background:white;
+    transition:width .2s ease;
+}
+
+@media(max-width:600px){
+
+    #chapter{
+        top:20px;
+        left:20px;
+    }
+
+    #progress{
+        top:20px;
+        right:20px;
+        width:45px;
+    }
+
+    #music{
+        right:18px;
+        bottom:18px;
+    }
+
+    .favorite-grid{
+        grid-template-columns:1fr;
+    }
+
+    .favorite-card{
+        min-height:100px;
+    }
+
+    #scrollHint{
+        bottom:22px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div id="scrollSpace"></div>
+
+<div id="loading">
+    <div class="loading-inner">
+        <div class="loading-name">Building Zimal's little world</div>
+        <div class="loading-bar">
+            <div id="loadFill"></div>
+        </div>
+    </div>
+</div>
+
+<div id="ui">
+
+    <div id="vignette"></div>
+    <div id="grain"></div>
+
+    <div id="chapter">01 / THE BEGINNING</div>
+
+    <div id="progress">
+        <div id="progressBar"></div>
+    </div>
+
+    <section id="intro">
+        <div class="intro-inner">
+            <div class="small-line">A little something for</div>
+            <div id="introTitle">HAPPIEST<br>BIRTHDAY<br>ZIMAL</div>
+            <div class="intro-sub">CALL ME OBSESSED OR NOT — I AM.....</div>
+        </div>
+
+        <div id="scrollHint">
+            Scroll to enter
+        </div>
+    </section>
+
+    <section id="story">
+        <div class="story-box" id="storyBox">
+            <div class="story-kicker" id="storyKicker"></div>
+            <div class="story-text" id="storyText"></div>
+            <div class="story-small" id="storySmall"></div>
+            <div id="letterCounter"></div>
+        </div>
+    </section>
+
+    <section id="favorites">
+        <div class="favorite-grid">
+
+            <div class="favorite-card">
+                <div class="favorite-label">Favorite color</div>
+                <div class="favorite-value" id="favColor">Your favorite color</div>
+            </div>
+
+            <div class="favorite-card">
+                <div class="favorite-label">Favorite food</div>
+                <div class="favorite-value" id="favFood">Your favorite food</div>
+            </div>
+
+            <div class="favorite-card">
+                <div class="favorite-label">Favorite song</div>
+                <div class="favorite-value" id="favSong">Your favorite song</div>
+            </div>
+
+            <div class="favorite-card">
+                <div class="favorite-label">Something else</div>
+                <div class="favorite-value" id="favOther">Something she likes</div>
+            </div>
+
+            <div class="favorite-card">
+                <div class="favorite-label">Someone she likes</div>
+                <div class="favorite-value" id="favSomeone">ME</div>
+            </div>
+
+        </div>
+    </section>
+
+    <section id="final">
+        <div class="final-inner">
+            <div class="final-big">
+                YOU ARE MY<br>
+                FAVOURITE PERSON<br>
+                ALIVE, ZIMAL.
+            </div>
+
+            <div class="final-small">
+                MAY GOD BLESS YOU AND US.<br>
+                MAY THIS YEAR GIVE YOU A THOUSAND REASONS TO SMILE.<br><br>
+                IN EVERY TIMELINE,<br>
+                I WOULD CHOOSE YOU AS MY BESTFRIEND.
+                <br><br>
+                I LIKE YOU...
+            </div>
+
+            <div class="final-sign">
+                HAPPY BIRTHDAY — ALWAYS.
+            </div>
+        </div>
+    </section>
+
+    <section id="giftReturn">
+        <div class="gift-return-inner">
+            <div class="gift-return-kicker">ONE LAST THING</div>
+            <div class="gift-return-title">GO BACK AND<br>GET YOUR GIFTS, ZIMAL.</div>
+            <div class="gift-return-copy">They are waiting back in the little universe.<br>Click each one. I made them for you.</div>
+        </div>
+    </section>
+
+    <button id="music">♫ DIGITAL SOUNDTRACK</button>
+</div>
+
+<div id="photoModal">
+    <div class="modal-inner">
+        <img id="modalImage" src="" alt="Zimal">
+        <div id="modalCaption"></div>
+        <button id="closeModal">CLOSE</button>
+    </div>
+</div>
+
+<div id="giftModal">
+    <div class="gift-scroll">
+        <div class="gift-scroll-kicker" id="giftScrollKicker">A LITTLE NOTE</div>
+        <div class="gift-scroll-title" id="giftScrollTitle"></div>
+        <div class="gift-scroll-copy" id="giftScrollCopy"></div>
+        <button id="claimBot">CLAIM YOUR CHAT BOT</button>
+        <button id="closeGift">CLOSE</button>
+    </div>
+</div>
+
+<script>
+/* ============================================================
+   ZIMAL BIRTHDAY WORLD
+   Everything is contained in this file.
+
+   EDIT ONLY THIS CONFIG SECTION FIRST.
+============================================================ */
+
+const CONFIG = {
+
+    name: "Zimal",
+
+    photos: [
+        {
+            src: "assets/photos/photo1.jpg",
+            caption: "just you being you."
+        },
+        {
+            src: "assets/photos/photo2.jpg",
+            caption: "another one for the birthday world."
+        },
+        {
+            src: "assets/photos/photo3.jpg",
+            caption: "because one photo was never enough."
+        },
+        {
+            src: "assets/photos/photo4.jpg",
+            caption: "main character energy."
+        },
+        {
+            src: "assets/photos/photo5.jpg",
+            caption: "birthday girl."
+        }
+    ],
+
+    favorites: {
+        color: "BLACK",
+        food: "LOADED FRIES",
+        song: "REFLECTIONS BY THE NEIGHBOURHOOD",
+        other: "ICE",
+        someone: "ME"
+    },
+
+    letters: [
+
+        {
+            kicker: "01 — FIRST THING",
+            text: "Today is about you.",
+            small: "Not some giant speech. Not some complicated explanation. Just a little world made because your birthday deserved something different."
+        },
+
+        {
+            kicker: "02 — HONESTLY",
+            text: "You are genuinely one of the most interesting people I know.",
+            small: "And somehow, even after knowing you for a while, there are still little things about you that make me smile."
+        },
+
+        {
+            kicker: "03 — THIS WORLD",
+            text: "So I built you a place where everything is a little more colourful.",
+            small: "Candy. Stars. Balloons. Random floating things. Basically a tiny digital universe with one very specific person at the centre of it."
+        },
+
+        {
+            kicker: "04 — NO NORMAL WEBSITE",
+            text: "Because a normal birthday message felt way too boring.",
+            small: "You have already received enough ordinary digital stuff from me. So this time I wanted to actually build something."
+        },
+
+        {
+            kicker: "05 — YOUR PHOTOS",
+            text: "And yes, obviously, you had to be somewhere in this world.",
+            small: "Not memories I made up. Just you, exactly as you are, floating through this ridiculous little birthday universe."
+        },
+
+        {
+            kicker: "06 — SOMETHING I HOPE",
+            text: "I hope this year is ridiculously good to you.",
+            small: "I hope you laugh more, stress less, achieve the things you want, and have people around you who remind you how important you are."
+        },
+
+        {
+            kicker: "07 — AND FINALLY",
+            text: "Thank you for simply being you.",
+            small: "Some people become important without needing some dramatic reason. They just do. And you're one of those people."
+        }
+
+    ]
+};
+
+
+/* ============================================================
+   BASIC SETUP
+============================================================ */
+
+const canvas = document.getElementById("canvas");
+THREE.Cache.enabled = true;
+
+const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    alpha: false,
+    powerPreference: "high-performance",
+    logarithmicDepthBuffer: true
+});
+
+renderer.setPixelRatio(
+    Math.min(window.devicePixelRatio || 1, 1.5)
+);
+
+renderer.setSize(
+    window.innerWidth,
+    window.innerHeight
+);
+
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0x05020c);
+
+scene.fog = new THREE.FogExp2(
+    0x080315,
+    0.025
+);
+
+const camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    500
+);
+
+camera.position.set(
+    0,
+    2,
+    22
+);
+
+const world = new THREE.Group();
+
+scene.add(world);
+
+
+/* ============================================================
+   LIGHTING
+============================================================ */
+
+const ambient = new THREE.AmbientLight(
+    0xffffff,
+    .75
+);
+
+scene.add(ambient);
+
+const moonLight = new THREE.DirectionalLight(
+    0xb8aaff,
+    3.2
+);
+
+moonLight.position.set(
+    -10,
+    20,
+    10
+);
+
+scene.add(moonLight);
+moonLight.castShadow = true;
+moonLight.shadow.mapSize.set(1024,1024);
+moonLight.shadow.camera.near = 1;
+moonLight.shadow.camera.far = 90;
+moonLight.shadow.bias = -.0005;
+
+const pinkLight = new THREE.PointLight(
+    0xff5bc8,
+    5,
+    80
+);
+
+pinkLight.position.set(
+    -10,
+    5,
+    5
+);
+
+scene.add(pinkLight);
+
+const blueLight = new THREE.PointLight(
+    0x5f7cff,
+    5,
+    80
+);
+
+blueLight.position.set(
+    12,
+    7,
+    -10
+);
+
+scene.add(blueLight);
+
+const fillLight = new THREE.HemisphereLight(
+    0xcfd8ff,
+    0x16091f,
+    .8
+);
+
+scene.add(fillLight);
+
+
+/* ============================================================
+   MATERIAL HELPERS
+============================================================ */
+
+const materialCache = new Map();
+
+function mat(color, roughness = .45, metalness = .05){
+
+    const key = `${color}-${roughness}-${metalness}`;
+    const cached = materialCache.get(key);
+
+    if(cached)
+        return cached;
+
+    const material = new THREE.MeshPhysicalMaterial({
+        color,
+        roughness,
+        metalness,
+        envMapIntensity: 1.25,
+        clearcoat:.28,
+        clearcoatRoughness:.2,
+        sheen:.12
+    });
+
+    materialCache.set(key, material);
+
+    return material;
+}
+
+function glowMat(color){
+
+    return new THREE.MeshBasicMaterial({
+        color,
+        transparent:true,
+        opacity:.8,
+        blending:THREE.AdditiveBlending,
+        depthWrite:false
+    });
+
+}
+
+
+/* ============================================================
+   STARS
+============================================================ */
+
+function createStars(){
+
+    const count =
+        window.innerWidth < 600
+        ? 1000
+        : 1800;
+
+    const positions = new Float32Array(count * 3);
+
+    for(let i=0;i<count;i++){
+
+        const radius =
+            35 + Math.random() * 100;
+
+        const theta =
+            Math.random() * Math.PI * 2;
+
+        const phi =
+            Math.acos(
+                2 * Math.random() - 1
+            );
+
+        positions[i*3] =
+            radius *
+            Math.sin(phi) *
+            Math.cos(theta);
+
+        positions[i*3+1] =
+            radius *
+            Math.cos(phi);
+
+        positions[i*3+2] =
+            radius *
+            Math.sin(phi) *
+            Math.sin(theta);
+
+    }
+
+    const geometry =
+        new THREE.BufferGeometry();
+
+    geometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(
+            positions,
+            3
+        )
+    );
+
+    const material =
+        new THREE.PointsMaterial({
+            color:0xffffff,
+            size:.075,
+            transparent:true,
+            opacity:.85,
+            depthWrite:false
+        });
+
+    const stars =
+        new THREE.Points(
+            geometry,
+            material
+        );
+
+    world.add(stars);
+
+    return stars;
+}
+
+const stars = createStars();
+
+
+/* ============================================================
+   FLOATING DUST
+============================================================ */
+
+function createDust(){
+
+    const count =
+        window.innerWidth < 600
+        ? 300
+        : 650;
+
+    const positions =
+        new Float32Array(count*3);
+
+    for(let i=0;i<count;i++){
+
+        positions[i*3] =
+            (Math.random()-.5)*80;
+
+        positions[i*3+1] =
+            (Math.random()-.5)*40;
+
+        positions[i*3+2] =
+            (Math.random()-.5)*100;
+
+    }
+
+    const geometry =
+        new THREE.BufferGeometry();
+
+    geometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(
+            positions,
+            3
+        )
+    );
+
+    const material =
+        new THREE.PointsMaterial({
+            color:0xffd9f7,
+            size:.12,
+            transparent:true,
+            opacity:.4,
+            depthWrite:false
+        });
+
+    const dust =
+        new THREE.Points(
+            geometry,
+            material
+        );
+
+    world.add(dust);
+
+    return dust;
+}
+
+const dust = createDust();
+
+function enableShadows(object){
+
+    object.traverse(child=>{
+
+        if(!child.isMesh)
+            return;
+
+        child.castShadow = true;
+        child.receiveShadow = true;
+
+    });
+}
+
+
+/* ============================================================
+   DISTANT SOLAR SYSTEM
+============================================================ */
+
+const universe = new THREE.Group();
+const universeBodies = [];
+
+function createUniverseBackdrop(){
+
+    const system = new THREE.Group();
+    system.position.set(-2,8,-58);
+
+    const sun = new THREE.Mesh(
+        new THREE.SphereGeometry(3.5,32,24),
+        new THREE.MeshBasicMaterial({
+            color:0xffb14d,
+            fog:false
+        })
+    );
+
+    system.add(sun);
+
+    const corona = new THREE.Mesh(
+        new THREE.SphereGeometry(4.4,24,16),
+        new THREE.MeshBasicMaterial({
+            color:0xff7b5c,
+            transparent:true,
+            opacity:.12,
+            depthWrite:false,
+            blending:THREE.AdditiveBlending,
+            fog:false
+        })
+    );
+
+    system.add(corona);
+
+    const planets = [
+        {radius:5.8,size:.55,color:0x7e9cff,speed:.22},
+        {radius:8.2,size:.9,color:0xff78a8,speed:-.13,ring:true},
+        {radius:11.2,size:1.25,color:0x65d8c5,speed:.08},
+        {radius:14.5,size:.72,color:0xc7a1ff,speed:-.05}
+    ];
+
+    planets.forEach((data,index)=>{
+
+        const orbit = new THREE.Mesh(
+            new THREE.TorusGeometry(data.radius,.018,6,96),
+            new THREE.MeshBasicMaterial({
+                color:index%2 ? 0xff9bcf : 0x8e9cff,
+                transparent:true,
+                opacity:.2,
+                depthWrite:false,
+                fog:false
+            })
+        );
+
+        orbit.rotation.x = Math.PI/2;
+        orbit.rotation.z = (index-.5)*.13;
+        system.add(orbit);
+
+        const planet = new THREE.Mesh(
+            new THREE.SphereGeometry(data.size,24,16),
+            new THREE.MeshStandardMaterial({
+                color:data.color,
+                roughness:.65,
+                metalness:.05,
+                emissive:data.color,
+                emissiveIntensity:.12,
+                fog:false
+            })
+        );
+
+        planet.position.set(
+            Math.cos(index*1.7)*data.radius,
+            Math.sin(index*1.7)*data.radius*.18,
+            Math.sin(index*1.7)*data.radius
+        );
+
+        system.add(planet);
+        universeBodies.push({planet,orbitRadius:data.radius,speed:data.speed,angle:index*1.7});
+
+        if(data.ring){
+            const ring = new THREE.Mesh(
+                new THREE.TorusGeometry(data.size*1.55,data.size*.12,8,40),
+                new THREE.MeshBasicMaterial({
+                    color:0xffd5e8,
+                    transparent:true,
+                    opacity:.65,
+                    depthWrite:false
+                })
+            );
+
+            ring.rotation.x = Math.PI/2.6;
+            planet.add(ring);
+        }
+
+    });
+
+    universe.add(system);
+    world.add(universe);
+}
+
+createUniverseBackdrop();
+
+function createSpiralGalaxy(){
+
+    const count = window.innerWidth < 600 ? 2200 : 5600;
+    const positions = new Float32Array(count*3);
+    const colors = new Float32Array(count*3);
+    const color = new THREE.Color();
+    const arms = 4;
+
+    for(let i=0;i<count;i++){
+
+        const radius = Math.pow(Math.random(),.62)*18;
+        const arm = i%arms;
+        const angle =
+            arm*(Math.PI*2/arms) +
+            radius*.42 +
+            (Math.random()-.5)*.7;
+        const spread = .35 + radius*.045;
+
+        positions[i*3] =
+            Math.cos(angle)*radius +
+            (Math.random()-.5)*spread;
+
+        positions[i*3+1] =
+            (Math.random()-.5)*(.3+radius*.035);
+
+        positions[i*3+2] =
+            Math.sin(angle)*radius*.58 +
+            (Math.random()-.5)*spread;
+
+        color.setHSL(
+            Math.random()>.35
+            ? .78 + Math.random()*.14
+            : .58 + Math.random()*.12,
+            .72,
+            .58 + Math.random()*.32
+        );
+
+        colors[i*3] = color.r;
+        colors[i*3+1] = color.g;
+        colors[i*3+2] = color.b;
+
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(positions,3)
+    );
+    geometry.setAttribute(
+        "color",
+        new THREE.BufferAttribute(colors,3)
+    );
+
+    const galaxy = new THREE.Points(
+        geometry,
+        new THREE.PointsMaterial({
+            size:.12,
+            sizeAttenuation:true,
+            vertexColors:true,
+            transparent:true,
+            opacity:.58,
+            depthWrite:false,
+            blending:THREE.AdditiveBlending,
+            fog:false
+        })
+    );
+
+    galaxy.position.set(6,10,-88);
+    galaxy.rotation.x = .28;
+    galaxy.rotation.z = -.22;
+
+    const core = new THREE.Mesh(
+        new THREE.SphereGeometry(2.4,24,16),
+        new THREE.MeshBasicMaterial({
+            color:0xffd5f6,
+            transparent:true,
+            opacity:.5,
+            depthWrite:false,
+            blending:THREE.AdditiveBlending,
+            fog:false
+        })
+    );
+
+    galaxy.add(core);
+    world.add(galaxy);
+
+    return galaxy;
+}
+
+const galaxy = createSpiralGalaxy();
+
+const backgroundObjects = [galaxy];
+
+const secondGalaxy = galaxy.clone();
+secondGalaxy.position.set(-18,6,-112);
+secondGalaxy.scale.setScalar(.62);
+secondGalaxy.rotation.set(.8,.2,.55);
+backgroundObjects.push(secondGalaxy);
+world.add(secondGalaxy);
+
+const thirdGalaxy = galaxy.clone();
+thirdGalaxy.position.set(20,-5,-125);
+thirdGalaxy.scale.setScalar(.42);
+thirdGalaxy.rotation.set(1.1,-.3,-.35);
+backgroundObjects.push(thirdGalaxy);
+world.add(thirdGalaxy);
+
+function createBlackHole(){
+
+    const blackHole = new THREE.Group();
+    blackHole.position.set(-13,-3,-76);
+    blackHole.rotation.z = -.18;
+
+    const eventHorizon = new THREE.Mesh(
+        new THREE.SphereGeometry(2.15,40,24),
+        new THREE.MeshBasicMaterial({
+            color:0x000000,
+            fog:false
+        })
+    );
+
+    blackHole.add(eventHorizon);
+
+    const disk = new THREE.Mesh(
+        new THREE.TorusGeometry(3.2,.42,16,96),
+        new THREE.MeshBasicMaterial({
+            color:0xff7b43,
+            transparent:true,
+            opacity:.82,
+            depthWrite:false,
+            blending:THREE.AdditiveBlending,
+            fog:false
+        })
+    );
+
+    disk.rotation.x = Math.PI/2;
+    blackHole.add(disk);
+
+    const halo = new THREE.Mesh(
+        new THREE.TorusGeometry(4.1,.08,8,96),
+        new THREE.MeshBasicMaterial({
+            color:0xffb9a0,
+            transparent:true,
+            opacity:.2,
+            depthWrite:false,
+            blending:THREE.AdditiveBlending,
+            fog:false
+        })
+    );
+
+    halo.rotation.x = Math.PI/2;
+    blackHole.add(halo);
+    world.add(blackHole);
+
+    return {blackHole,disk,halo};
+}
+
+const blackHole = createBlackHole();
+
+function createNebula(position,color,scale){
+
+    const count = window.innerWidth < 600 ? 280 : 650;
+    const positions = new Float32Array(count*3);
+
+    for(let i=0;i<count;i++){
+
+        const radius = Math.pow(Math.random(),.55)*scale;
+        const angle = Math.random()*Math.PI*2;
+
+        positions[i*3] = Math.cos(angle)*radius;
+        positions[i*3+1] = (Math.random()-.5)*scale*.45;
+        positions[i*3+2] = Math.sin(angle)*radius*.55;
+
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position",new THREE.BufferAttribute(positions,3));
+
+    const nebula = new THREE.Points(
+        geometry,
+        new THREE.PointsMaterial({
+            color,
+            size:.18,
+            transparent:true,
+            opacity:.3,
+            depthWrite:false,
+            blending:THREE.AdditiveBlending,
+            fog:false
+        })
+    );
+
+    nebula.position.set(...position);
+    world.add(nebula);
+    backgroundObjects.push(nebula);
+}
+
+createNebula([-22,13,-92],0x7b6dff,7);
+createNebula([22,-8,-108],0xff6fc8,6);
+
+
+/* ============================================================
+   CANDY
+============================================================ */
+
+function createCandy(x,y,z,scale=1,rotation=0){
+
+    const group =
+        new THREE.Group();
+
+    group.position.set(
+        x,y,z
+    );
+
+    group.rotation.y =
+        rotation;
+
+    group.scale.setScalar(scale);
+
+    const stick =
+        new THREE.Mesh(
+            new THREE.CylinderGeometry(
+                .12,
+                .12,
+                2.2,
+                24
+            ),
+            mat(0xffffff,.4)
+        );
+
+    stick.rotation.z =
+        Math.PI/2;
+
+    group.add(stick);
+
+    const candy =
+        new THREE.Mesh(
+            new THREE.TorusGeometry(
+                .72,
+                .22,
+                16,
+                48,
+                Math.PI*1.7
+            ),
+            mat(
+                Math.random()>.5
+                ? 0xff72c8
+                : 0x8e7cff,
+                .35
+            )
+        );
+
+    candy.rotation.y =
+        Math.PI/2;
+
+    group.add(candy);
+
+    world.add(group);
+
+    return group;
+}
+
+
+/* ============================================================
+   LOLLIPOP
+============================================================ */
+
+function createLollipop(x,y,z,color,scale=1){
+
+    const group =
+        new THREE.Group();
+
+    group.position.set(
+        x,y,z
+    );
+
+    group.scale.setScalar(scale);
+
+    const stick =
+        new THREE.Mesh(
+            new THREE.CylinderGeometry(
+                .08,.08,2.5,24
+            ),
+            mat(0xffffff)
+        );
+
+    group.add(stick);
+
+    const ball =
+        new THREE.Mesh(
+            new THREE.SphereGeometry(
+                .85,
+                32,
+                24
+            ),
+            mat(color,.3)
+        );
+
+    ball.position.y =
+        1.45;
+
+    group.add(ball);
+
+    world.add(group);
+
+    return group;
+}
+
+
+/* ============================================================
+   BALLOON
+============================================================ */
+
+function createBalloon(x,y,z,color,scale=1){
+
+    const group =
+        new THREE.Group();
+
+    group.position.set(
+        x,y,z
+    );
+
+    group.scale.setScalar(scale);
+
+    const balloon =
+        new THREE.Mesh(
+            new THREE.SphereGeometry(
+                1,
+                32,
+                24
+            ),
+            mat(color,.25)
+        );
+
+    balloon.scale.set(
+        .85,
+        1.15,
+        .85
+    );
+
+    group.add(balloon);
+
+    const knot =
+        new THREE.Mesh(
+            new THREE.ConeGeometry(
+                .16,.35,24
+            ),
+            mat(color)
+        );
+
+    knot.position.y =
+        -1.15;
+
+    knot.rotation.z =
+        Math.PI;
+
+    group.add(knot);
+
+    const line =
+        new THREE.Mesh(
+            new THREE.CylinderGeometry(
+                .012,
+                .012,
+                4.5,
+                16
+            ),
+            mat(0xffffff)
+        );
+
+    line.position.y =
+        -3.35;
+
+    group.add(line);
+
+    world.add(group);
+
+    return group;
+}
+
+
+/* ============================================================
+   GIFT BOX
+============================================================ */
+
+function createGift(x,y,z,color,scale=1){
+
+    const group =
+        new THREE.Group();
+
+    group.position.set(
+        x,y,z
+    );
+
+    group.scale.setScalar(scale);
+
+    group.userData.isGift = true;
+    group.userData.storageKey = `zimal-gift-${x}-${y}-${z}`;
+    group.userData.opened = sessionStorage.getItem(group.userData.storageKey)==="open";
+
+    function beveledBox(width,height,depth,bevel){
+
+        const shape = new THREE.Shape();
+        const halfWidth = width/2;
+        const halfHeight = height/2;
+
+        shape.moveTo(-halfWidth+bevel,-halfHeight);
+        shape.lineTo(halfWidth-bevel,-halfHeight);
+        shape.quadraticCurveTo(halfWidth,-halfHeight,halfWidth,-halfHeight+bevel);
+        shape.lineTo(halfWidth,halfHeight-bevel);
+        shape.quadraticCurveTo(halfWidth,halfHeight,halfWidth-bevel,halfHeight);
+        shape.lineTo(-halfWidth+bevel,halfHeight);
+        shape.quadraticCurveTo(-halfWidth,halfHeight,-halfWidth,halfHeight-bevel);
+        shape.lineTo(-halfWidth,-halfHeight+bevel);
+        shape.quadraticCurveTo(-halfWidth,-halfHeight,-halfWidth+bevel,-halfHeight);
+
+        const geometry = new THREE.ExtrudeGeometry(shape,{
+            depth,
+            bevelEnabled:true,
+            bevelSegments:3,
+            bevelSize:bevel*.45,
+            bevelThickness:bevel*.45,
+            curveSegments:3
+        });
+
+        geometry.translate(0,0,-depth/2);
+        return geometry;
+    }
+
+    const box =
+        new THREE.Mesh(
+            beveledBox(2.3,2.0,2.3,.14),
+            mat(color,.35)
+        );
+
+    group.add(box);
+
+    const ribbonVertical =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                .32,2.05,2.34
+            ),
+            mat(0xffffff,.3)
+        );
+
+    group.add(ribbonVertical);
+
+    const ribbonHorizontal =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                2.34,.32,2.34
+            ),
+            mat(0xffffff,.3)
+        );
+
+    group.add(ribbonHorizontal);
+
+    const lid =
+        new THREE.Mesh(
+            beveledBox(2.5,.3,2.5,.08),
+            mat(color,.3)
+        );
+
+    lid.position.y =
+        1.05;
+
+    lid.userData.isGiftLid = true;
+
+    if(group.userData.opened){
+        lid.position.y = 2.35;
+        lid.rotation.z = -.2;
+    }
+
+    group.add(lid);
+
+    const bow1 =
+        new THREE.Mesh(
+            new THREE.TorusGeometry(
+                .35,.12,18,36
+            ),
+            mat(0xffffff)
+        );
+
+    bow1.position.set(
+        -.35,
+        1.35,
+        0
+    );
+
+    bow1.rotation.y =
+        Math.PI/2;
+
+    group.add(bow1);
+
+    const bow2 =
+        bow1.clone();
+
+    bow2.position.x =
+        .35;
+
+    group.add(bow2);
+
+    if(group.userData.opened){
+        bow1.visible = false;
+        bow2.visible = false;
+    }
+
+    const innerGlow = new THREE.Mesh(
+        new THREE.SphereGeometry(.7,24,16),
+        glowMat(0xffd66b)
+    );
+
+    innerGlow.position.y = .78;
+    innerGlow.scale.y = .35;
+    innerGlow.visible = group.userData.opened;
+    group.add(innerGlow);
+
+    group.userData.lid = lid;
+    group.userData.bow = [bow1,bow2];
+    group.userData.innerGlow = innerGlow;
+    group.userData.baseY = y;
+
+    world.add(group);
+
+    return group;
+}
+
+
+/* ============================================================
+   CAKE
+============================================================ */
+
+function createCake(x,y,z,scale=1){
+
+    const group =
+        new THREE.Group();
+
+    group.position.set(
+        x,y,z
+    );
+
+    group.scale.setScalar(scale);
+
+    const base =
+        new THREE.Mesh(
+            new THREE.CylinderGeometry(
+                2.8,
+                3,
+                1.3,
+                64
+            ),
+            mat(0xffb7df,.35)
+        );
+
+    group.add(base);
+
+    const icing =
+        new THREE.Mesh(
+            new THREE.CylinderGeometry(
+                2.85,
+                2.85,
+                .25,
+                64
+            ),
+            mat(0xffffff,.25)
+        );
+
+    icing.position.y =
+        .68;
+
+    group.add(icing);
+
+    const plate =
+        new THREE.Mesh(
+            new THREE.CylinderGeometry(
+                3.35,
+                3.45,
+                .16,
+                64
+            ),
+            mat(0xe8ddff,.22,.12)
+        );
+
+    plate.position.y = -.7;
+    group.add(plate);
+
+    for(let i=0;i<9;i++){
+
+        const drip =
+            new THREE.Mesh(
+                new THREE.SphereGeometry(
+                    .16 + (i%3)*.035,
+                    16,
+                    12
+                ),
+                mat(0xffffff,.22)
+            );
+
+        const angle = i/9*Math.PI*2;
+        drip.position.set(
+            Math.cos(angle)*2.45,
+            .57 - (i%3)*.12,
+            Math.sin(angle)*2.45
+        );
+
+        drip.scale.y = 1.5;
+        group.add(drip);
+
+    }
+
+    for(let i=0;i<5;i++){
+
+        const candle =
+            new THREE.Mesh(
+                new THREE.CylinderGeometry(
+                    .16,.16,.9,24
+                ),
+                mat(
+                    i%2===0
+                    ? 0x9f8cff
+                    : 0xff73c8
+                )
+            );
+
+        candle.position.set(
+            -1.5+i*.75,
+            1.25,
+            0
+        );
+
+        group.add(candle);
+
+        const flame =
+            new THREE.Mesh(
+                new THREE.SphereGeometry(
+                    .14,
+                        16,
+                        12
+                ),
+                glowMat(0xffd66b)
+            );
+
+        flame.scale.y =
+            1.6;
+
+        flame.position.set(
+            -1.5+i*.75,
+            1.82,
+            0
+        );
+
+        group.add(flame);
+
+    }
+
+    world.add(group);
+
+    return group;
+}
+
+
+/* ============================================================
+   CLOUD
+============================================================ */
+
+function createCloud(x,y,z,scale=1){
+
+    const group =
+        new THREE.Group();
+
+    group.position.set(
+        x,y,z
+    );
+
+    group.scale.setScalar(scale);
+
+    const cloudMat =
+        new THREE.MeshStandardMaterial({
+            color:0xf4edff,
+            roughness:1,
+            transparent:true,
+            opacity:.9
+        });
+
+    const pieces = [
+        [-1.4,0,0,.9],
+        [-.5,.35,0,1.2],
+        [.5,.15,0,1.3],
+        [1.35,0,0,.8]
+    ];
+
+    pieces.forEach(p=>{
+
+        const mesh =
+            new THREE.Mesh(
+                new THREE.SphereGeometry(
+                    p[3],
+                    24,
+                    16
+                ),
+                cloudMat
+            );
+
+        mesh.position.set(
+            p[0],
+            p[1],
+            p[2]
+        );
+
+        group.add(mesh);
+
+    });
+
+    world.add(group);
+
+    return group;
+}
+
+
+/* ============================================================
+   MOON
+============================================================ */
+
+function createMoon(){
+
+    const moon =
+        new THREE.Mesh(
+            new THREE.SphereGeometry(
+                3.5,
+                48,
+                32
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0xf4eaff,
+                emissive:0x5c4b83,
+                emissiveIntensity:.7,
+                roughness:.8
+            })
+        );
+
+    moon.position.set(
+        18,
+        14,
+        -20
+    );
+
+    world.add(moon);
+
+    return moon;
+}
+
+const moon = createMoon();
+
+
+/* ============================================================
+   BIG HEART
+============================================================ */
+
+function createHeart(x,y,z,scale=1){
+
+    const group =
+        new THREE.Group();
+
+    group.position.set(
+        x,y,z
+    );
+
+    group.scale.setScalar(scale);
+
+    const shape =
+        new THREE.Shape();
+
+    shape.moveTo(
+        0,
+        -1
+    );
+
+    shape.bezierCurveTo(
+        -2.4,
+        -2.4,
+        -3.4,
+        .4,
+        0,
+        2
+    );
+
+    shape.bezierCurveTo(
+        3.4,
+        .4,
+        2.4,
+        -2.4,
+        0,
+        -1
+    );
+
+    const geometry =
+        new THREE.ExtrudeGeometry(
+            shape,
+            {
+                depth:.7,
+                bevelEnabled:true,
+                bevelSegments:4,
+                bevelSize:.18,
+                bevelThickness:.18
+            }
+        );
+
+    const heart =
+        new THREE.Mesh(
+            geometry,
+            mat(0xff4fae,.25)
+        );
+
+    heart.rotation.x =
+        Math.PI;
+
+    group.add(heart);
+
+    world.add(group);
+
+    return group;
+}
+
+
+/* ============================================================
+   WORLD OBJECTS
+============================================================ */
+
+const animatedObjects = [];
+const giftObjects = [];
+
+animatedObjects.push(
+    createCandy(-9,3,-3,1.4,.3)
+);
+
+animatedObjects.push(
+    createCandy(10,4,-7,1.1,-.4)
+);
+
+animatedObjects.push(
+    createCandy(-12,-2,-10,1.7,.9)
+);
+
+animatedObjects.push(
+    createLollipop(7,-1,-5,0xff62bd,1.4)
+);
+
+animatedObjects.push(
+    createLollipop(-7,-3,-8,0x8172ff,1.1)
+);
+
+animatedObjects.push(
+    createBalloon(-7,7,-2,0xff6fc8,1)
+);
+
+animatedObjects.push(
+    createBalloon(-5,9,-5,0x8878ff,.9)
+);
+
+animatedObjects.push(
+    createBalloon(8,8,-8,0xff8acb,1.1)
+);
+
+animatedObjects.push(
+    createBalloon(11,5,-4,0xff6fae, .85)
+);
+
+const firstGift = createGift(-6,-4,-7,0x806cff,1.1);
+const secondGift = createGift(6,-4,-10,0xff64b7,1.3);
+const thirdGift = createGift(13,-3,-16,0xff8cce,1);
+
+giftObjects.push(firstGift,secondGift,thirdGift);
+animatedObjects.push(firstGift,secondGift,thirdGift);
+
+animatedObjects.push(
+    createCake(0,-4,-15,1.3)
+);
+
+animatedObjects.push(
+    createHeart(0,9,-24,1.7)
+);
+
+animatedObjects.push(
+    createCloud(-12,10,-16,2)
+);
+
+animatedObjects.push(
+    createCloud(13,11,-18,2.4)
+);
+
+animatedObjects.forEach((object)=>{
+    object.userData.baseY = object.position.y;
+    object.userData.baseScale = object.scale.x;
+    enableShadows(object);
+});
+
+
+/* ============================================================
+   PHOTO GALLERY
+============================================================ */
+
+const photoGroup =
+    new THREE.Group();
+
+world.add(photoGroup);
+
+const photoMeshes = [];
+
+const textureLoader =
+    new THREE.TextureLoader();
+
+function createPhoto(index,data){
+
+    const group =
+        new THREE.Group();
+
+    const width = 3.25;
+    const height = 4.2;
+
+    const frame =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                width+.35,
+                height+.35,
+                .25
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0xffffff,
+                roughness:.35,
+                metalness:.15
+            })
+        );
+
+    group.add(frame);
+
+    const geometry =
+        new THREE.PlaneGeometry(
+            width,
+            height
+        );
+
+    const placeholder =
+        document.createElement("canvas");
+
+    placeholder.width=512;
+    placeholder.height=640;
+
+    const ctx =
+        placeholder.getContext("2d");
+
+    const gradient =
+        ctx.createLinearGradient(
+            0,0,
+            512,640
+        );
+
+    gradient.addColorStop(
+        0,
+        "#9b7cff"
+    );
+
+    gradient.addColorStop(
+        1,
+        "#ff69ba"
+    );
+
+    ctx.fillStyle =
+        gradient;
+
+    ctx.fillRect(
+        0,0,512,640
+    );
+
+    ctx.fillStyle =
+        "rgba(255,255,255,.85)";
+
+    ctx.textAlign =
+        "center";
+
+    ctx.font =
+        "bold 42px Arial";
+
+    ctx.fillText(
+        "ZIMAL",
+        256,
+        310
+    );
+
+    ctx.font =
+        "20px Arial";
+
+    ctx.fillText(
+        "birthday world",
+        256,
+        350
+    );
+
+    const fallbackTexture =
+        new THREE.CanvasTexture(
+            placeholder
+        );
+
+    const material =
+        new THREE.MeshBasicMaterial({
+            map:fallbackTexture
+        });
+
+    const photo =
+        new THREE.Mesh(
+            geometry,
+            material
+        );
+
+    photo.position.z =
+        .14;
+
+    group.add(photo);
+
+    textureLoader.load(
+        data.src,
+        texture=>{
+
+            texture.colorSpace =
+                THREE.SRGBColorSpace;
+
+            material.map =
+                texture;
+
+            material.needsUpdate =
+                true;
+
+        },
+        undefined,
+        ()=>{
+            console.log(
+                "Photo unavailable:",
+                data.src
+            );
+        }
+    );
+
+    group.userData.photoIndex =
+        index;
+
+    group.userData.caption =
+        data.caption;
+
+    photoGroup.add(group);
+
+    photoMeshes.push(group);
+
+    return group;
+}
+
+CONFIG.photos.forEach(
+    (photo,index)=>{
+        createPhoto(
+            index,
+            photo
+        );
+    }
+);
+
+
+/* ============================================================
+   PHOTO POSITIONS
+============================================================ */
+
+const photoPositions = [
+    [-10,3,-16],
+    [0,1,-24],
+    [10,4,-32],
+    [-10,-1,-40],
+    [10,-2,-48]
+];
+
+photoMeshes.forEach((photo,i)=>{
+
+    const p =
+        photoPositions[i %
+        photoPositions.length];
+
+    photo.position.set(
+        p[0],
+        p[1],
+        p[2]
+    );
+
+    photo.rotation.y =
+        (i%2===0 ? -.25 : .25);
+
+    photo.rotation.z =
+        (i%2===0 ? -.05 : .05);
+
+    enableShadows(photo);
+
+});
+
+
+/* ============================================================
+   FLOATING RINGS
+============================================================ */
+
+const rings = [];
+
+for(let i=0;i<14;i++){
+
+    const ring =
+        new THREE.Mesh(
+            new THREE.TorusGeometry(
+                1.2 + Math.random()*1.4,
+                .045,
+                8,
+                48
+            ),
+            new THREE.MeshBasicMaterial({
+                color:
+                    i%2
+                    ? 0xff6fc8
+                    : 0x8f7cff,
+                transparent:true,
+                opacity:.45
+            })
+        );
+
+    ring.position.set(
+        (Math.random()-.5)*35,
+        (Math.random()-.5)*22,
+        -5-Math.random()*50
+    );
+
+    ring.rotation.x =
+        Math.random()*Math.PI;
+
+    ring.rotation.y =
+        Math.random()*Math.PI;
+
+    world.add(ring);
+
+    rings.push(ring);
+
+}
+
+
+/* ============================================================
+   CAMERA PATH
+============================================================ */
+
+const cameraPoints = [
+
+    {
+        p:new THREE.Vector3(0,2,22),
+        t:new THREE.Vector3(0,2,0)
+    },
+
+    {
+        p:new THREE.Vector3(0,3,10),
+        t:new THREE.Vector3(0,3,-10)
+    },
+
+    {
+        p:new THREE.Vector3(-7,3,4),
+        t:new THREE.Vector3(0,2,-15)
+    },
+
+    {
+        p:new THREE.Vector3(5,2,-8),
+        t:new THREE.Vector3(0,3,-25)
+    },
+
+    {
+        p:new THREE.Vector3(-5,4,-18),
+        t:new THREE.Vector3(0,2,-32)
+    },
+
+    {
+        p:new THREE.Vector3(5,2,-28),
+        t:new THREE.Vector3(0,2,-42)
+    },
+
+    {
+        p:new THREE.Vector3(0,4,-38),
+        t:new THREE.Vector3(0,3,-55)
+    },
+
+    {
+        p:new THREE.Vector3(0,1,-52),
+        t:new THREE.Vector3(0,1,-70)
+    },
+
+    {
+        p:new THREE.Vector3(0,2,-68),
+        t:new THREE.Vector3(0,2,-75)
+    },
+
+    {
+        p:new THREE.Vector3(0,2,-80),
+        t:new THREE.Vector3(0,2,-88)
+    }
+
+];
+
+const cameraTarget = new THREE.Vector3();
+
+function interpolateCamera(progress){
+
+    const max =
+        cameraPoints.length-1;
+
+    const scaled =
+        progress*max;
+
+    const index =
+        Math.min(
+            Math.floor(scaled),
+            max-1
+        );
+
+    const local =
+        scaled-index;
+
+    const a =
+        cameraPoints[index];
+
+    const b =
+        cameraPoints[index+1];
+
+    const eased =
+        local*local*(3-2*local);
+
+    camera.position.lerpVectors(
+        a.p,
+        b.p,
+        eased
+    );
+
+    cameraTarget.lerpVectors(
+        a.t,
+        b.t,
+        eased
+    );
+
+    camera.lookAt(cameraTarget);
+
+}
+
+
+/* ============================================================
+   MOUSE PARALLAX
+============================================================ */
+
+let mouseX=0;
+let mouseY=0;
+
+let targetMouseX=0;
+let targetMouseY=0;
+
+window.addEventListener(
+    "pointermove",
+    e=>{
+
+        targetMouseX =
+            (e.clientX/window.innerWidth-.5);
+
+        targetMouseY =
+            (e.clientY/window.innerHeight-.5);
+
+    }
+);
+
+
+/* ============================================================
+   SCROLL
+============================================================ */
+
+let scrollTarget=0;
+let scrollProgress=0;
+
+window.addEventListener(
+    "scroll",
+    ()=>{
+
+        const max =
+            document.documentElement.scrollHeight -
+            window.innerHeight;
+
+        scrollTarget =
+            max > 0
+            ? window.scrollY/max
+            : 0;
+
+    },
+    {passive:true}
+);
+
+
+/* ============================================================
+   STORY SYSTEM
+============================================================ */
+
+const storyBox =
+    document.getElementById(
+        "storyBox"
+    );
+
+const storyKicker =
+    document.getElementById(
+        "storyKicker"
+    );
+
+const storyText =
+    document.getElementById(
+        "storyText"
+    );
+
+const storySmall =
+    document.getElementById(
+        "storySmall"
+    );
+
+const letterCounter =
+    document.getElementById(
+        "letterCounter"
+    );
+
+let currentLetter=-1;
+let letterTimer=null;
+let giftsUnlocked=false;
+
+function showLetter(index){
+
+    if(index===currentLetter)
+        return;
+
+    clearTimeout(letterTimer);
+    currentLetter=index;
+
+    if(index<0 ||
+       index>=CONFIG.letters.length){
+
+        storyBox.classList.remove(
+            "visible"
+        );
+
+        return;
+    }
+
+    const letter =
+        CONFIG.letters[index];
+
+    storyBox.classList.remove(
+        "visible"
+    );
+
+    letterTimer=setTimeout(()=>{
+
+        if(currentLetter!==index)
+            return;
+
+        storyKicker.textContent =
+            letter.kicker;
+
+        storyText.textContent =
+            letter.text;
+
+        storySmall.textContent =
+            letter.small;
+
+        letterCounter.textContent =
+            `${String(index+1).padStart(2,"0")} / ${String(CONFIG.letters.length).padStart(2,"0")}`;
+
+        storyBox.classList.add(
+            "visible"
+        );
+
+        letterTimer=null;
+
+    },250);
+
+}
+
+
+/* ============================================================
+   CHAPTER LABEL
+============================================================ */
+
+const chapter =
+    document.getElementById(
+        "chapter"
+    );
+
+function updateChapter(p){
+
+    if(p<.08){
+
+        chapter.textContent =
+            "01 / THE BEGINNING";
+
+    }else if(p<.20){
+
+        chapter.textContent =
+            "02 / ENTER THE WORLD";
+
+    }else if(p<.50){
+
+        chapter.textContent =
+            "03 / ZIMAL";
+
+    }else if(p<.72){
+
+        chapter.textContent =
+            "04 / A FEW WORDS";
+
+    }else if(p<.84){
+
+        chapter.textContent =
+            "05 / THINGS YOU LIKE";
+
+    }else{
+
+        chapter.textContent =
+            "06 / ALWAYS";
+
+    }
+
+}
+
+
+/* ============================================================
+   INTRO
+============================================================ */
+
+const intro =
+    document.getElementById(
+        "intro"
+    );
+
+function updateIntro(p){
+
+    const fade =
+        Math.min(
+            Math.max(
+                (p-.025)/.12,
+                0
+            ),
+            1
+        );
+
+    intro.style.opacity =
+        String(1-fade);
+
+    intro.style.transform =
+        `translateY(${-fade*70}px) scale(${1-fade*.04})`;
+
+}
+
+
+/* ============================================================
+   FAVORITES
+============================================================ */
+
+document.getElementById(
+    "favColor"
+).textContent =
+    CONFIG.favorites.color;
+
+document.getElementById(
+    "favFood"
+).textContent =
+    CONFIG.favorites.food;
+
+document.getElementById(
+    "favSong"
+).textContent =
+    CONFIG.favorites.song;
+
+document.getElementById(
+    "favOther"
+).textContent =
+    CONFIG.favorites.other;
+
+document.getElementById(
+    "favSomeone"
+).textContent =
+    CONFIG.favorites.someone;
+
+const favorites =
+    document.getElementById(
+        "favorites"
+    );
+
+
+/* ============================================================
+   FINAL
+============================================================ */
+
+const finalSection =
+    document.getElementById(
+        "final"
+    );
+
+const giftReturn =
+    document.getElementById(
+        "giftReturn"
+    );
+
+function updateFinal(p){
+
+    if(p>.94)
+        giftsUnlocked=true;
+
+    if(p>.84 && p<.94){
+
+        finalSection.classList.add(
+            "active"
+        );
+
+    }else{
+
+        finalSection.classList.remove(
+            "active"
+        );
+
+    }
+
+    if(p>.94){
+        giftReturn.classList.add("active");
+    }else{
+        giftReturn.classList.remove("active");
+    }
+
+}
+
+
+/* ============================================================
+   PHOTO CLICK
+============================================================ */
+
+const raycaster =
+    new THREE.Raycaster();
+
+const pointer =
+    new THREE.Vector2();
+
+const giftModal =
+    document.getElementById("giftModal");
+
+const giftMessages = [
+    {
+        kicker:"GIFT ONE — FROM MY HEART",
+        title:"You are deeply valued.",
+        copy:"May God bless you, protect your heart, and fill your days with the kind of happiness you deserve. You make life warmer just by being in it."
+    },
+    {
+        kicker:"GIFT TWO — A LITTLE PRAYER",
+        title:"Always keep smiling, Zimal.",
+        copy:"May God bless every step you take, make your dreams easier to reach, and surround you with people who remind you how loved and important you are."
+    },
+    {
+        kicker:"GIFT THREE — I TRIED",
+        title:"ZIMAL, I TRIED MY BEST.",
+        copy:"It is not perfect, but it is made with a lot of thought for you. Claim your little chat bot too. It is waiting with one more thing to say.",
+        claim:true
+    }
+];
+
+function openGift(index){
+
+    if(!giftsUnlocked)
+        return;
+
+    const gift = giftObjects[index];
+
+    if(!gift)
+        return;
+
+    const wasOpened = gift.userData.opened;
+
+    gift.userData.opened = true;
+
+    if(!wasOpened){
+        gift.userData.opening = true;
+        gift.userData.openProgress = 0;
+    }
+
+    sessionStorage.setItem(
+        gift.userData.storageKey,
+        "open"
+    );
+
+    const message = giftMessages[index];
+
+    document.getElementById("giftScrollKicker").textContent = message.kicker;
+    document.getElementById("giftScrollTitle").textContent = message.title;
+    document.getElementById("giftScrollCopy").textContent = message.copy;
+    giftModal.classList.toggle("claim-mode",Boolean(message.claim));
+    giftModal.classList.add("open");
+}
+
+canvas.addEventListener(
+    "pointerdown",
+    event=>{
+
+        pointer.x =
+            (event.clientX /
+             window.innerWidth)*2-1;
+
+        pointer.y =
+            -(event.clientY /
+              window.innerHeight)*2+1;
+
+        raycaster.setFromCamera(
+            pointer,
+            camera
+        );
+
+        if(giftsUnlocked){
+
+            const projectedGift = new THREE.Vector3();
+
+            for(let i=0;i<giftObjects.length;i++){
+
+                giftObjects[i].getWorldPosition(projectedGift);
+                projectedGift.project(camera);
+
+                const giftX = (projectedGift.x+1)*.5*window.innerWidth;
+                const giftY = (1-projectedGift.y)*.5*window.innerHeight;
+                const distance = Math.hypot(
+                    event.clientX-giftX,
+                    event.clientY-giftY
+                );
+
+                if(projectedGift.z>-1 && projectedGift.z<1 && distance<150){
+                    openGift(i);
+                    return;
+                }
+
+            }
+
+        }
+
+        const giftIntersections =
+            raycaster.intersectObjects(
+                giftObjects,
+                true
+            );
+
+        if(giftIntersections.length){
+
+            let gift = giftIntersections[0].object;
+
+            while(
+                gift.parent &&
+                gift.userData.isGift!==true
+            ){
+                gift = gift.parent;
+            }
+
+            const giftIndex = giftObjects.indexOf(gift);
+
+            if(giftIndex>=0){
+                openGift(giftIndex);
+                return;
+            }
+
+        }
+
+        const intersections =
+            raycaster.intersectObjects(
+                photoMeshes,
+                true
+            );
+
+        if(
+            intersections.length &&
+            scrollProgress>.15 &&
+            scrollProgress<.75
+        ){
+
+            let object =
+                intersections[0].object;
+
+            while(
+                object.parent &&
+                object.userData.photoIndex===undefined
+            ){
+                object =
+                    object.parent;
+            }
+
+            if(
+                object.userData.photoIndex !==
+                undefined
+            ){
+
+                const index =
+                    object.userData.photoIndex;
+
+                openPhoto(index);
+
+            }
+
+        }
+
+    }
+);
+
+
+function openPhoto(index){
+
+    const data =
+        CONFIG.photos[index];
+
+    document.getElementById(
+        "modalImage"
+    ).src =
+        data.src;
+
+    document.getElementById(
+        "modalCaption"
+    ).textContent =
+        data.caption;
+
+    document.getElementById(
+        "photoModal"
+    ).classList.add(
+        "open"
+    );
+
+}
+
+document.getElementById(
+    "closeModal"
+).onclick=()=>{
+
+    document.getElementById(
+        "photoModal"
+    ).classList.remove(
+        "open"
+    );
+
+};
+
+document.getElementById(
+    "closeGift"
+).onclick=()=>{
+
+    giftModal.classList.remove("open");
+
+};
+
+document.getElementById(
+    "claimBot"
+).onclick=()=>{
+
+    window.location.href =
+        "https://abdxllah-cmd.github.io/zimal-ai/";
+
+};
+
+
+/* ============================================================
+   DIGITAL SOUNDTRACK
+============================================================ */
+
+let audioContext=null;
+let musicPlaying=false;
+let musicTimer=null;
+let musicStep=0;
+
+const musicButton =
+    document.getElementById(
+        "music"
+    );
+
+function startMusic(){
+
+    if(!audioContext){
+
+        audioContext =
+            new (
+                window.AudioContext ||
+                window.webkitAudioContext
+            )();
+
+    }
+
+    if(
+        audioContext.state ===
+        "suspended"
+    ){
+
+        audioContext.resume();
+
+    }
+
+    musicPlaying=true;
+
+    musicButton.textContent =
+        "♫ SOUNDTRACK ON";
+
+    musicStep=0;
+
+    playNextNote();
+
+}
+
+function stopMusic(){
+
+    musicPlaying=false;
+
+    clearTimeout(
+        musicTimer
+    );
+
+    musicButton.textContent =
+        "♫ DIGITAL SOUNDTRACK";
+
+}
+
+function playNextNote(){
+
+    if(!musicPlaying)
+        return;
+
+    const notes = [
+        261.63,
+        329.63,
+        392.00,
+        523.25,
+        392.00,
+        329.63,
+        293.66,
+        392.00
+    ];
+
+    const freq =
+        notes[
+            musicStep %
+            notes.length
+        ];
+
+    const osc =
+        audioContext.createOscillator();
+
+    const gain =
+        audioContext.createGain();
+
+    osc.type =
+        "sine";
+
+    osc.frequency.value =
+        freq;
+
+    gain.gain.setValueAtTime(
+        0,
+        audioContext.currentTime
+    );
+
+    gain.gain.linearRampToValueAtTime(
+        .035,
+        audioContext.currentTime+.03
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+        .001,
+        audioContext.currentTime+.65
+    );
+
+    osc.connect(gain);
+    gain.connect(
+        audioContext.destination
+    );
+
+    osc.start();
+
+    osc.stop(
+        audioContext.currentTime+.7
+    );
+
+    musicStep++;
+
+    musicTimer =
+        setTimeout(
+            playNextNote,
+            420
+        );
+
+}
+
+musicButton.onclick=()=>{
+
+    if(musicPlaying)
+        stopMusic();
+    else
+        startMusic();
+
+};
+
+
+/* ============================================================
+   ANIMATION
+============================================================ */
+
+let clock =
+    new THREE.Clock();
+
+let time=0;
+
+function animate(){
+
+    requestAnimationFrame(
+        animate
+    );
+
+    const delta =
+        clock.getDelta();
+
+    time += delta;
+
+    scrollProgress +=
+        (
+            scrollTarget -
+            scrollProgress
+        )*.075;
+
+    mouseX +=
+        (
+            targetMouseX -
+            mouseX
+        )*.04;
+
+    mouseY +=
+        (
+            targetMouseY -
+            mouseY
+        )*.04;
+
+    interpolateCamera(
+        scrollProgress
+    );
+
+    camera.position.x +=
+        mouseX*.8;
+
+    camera.position.y +=
+        -mouseY*.45;
+
+    /*
+       Floating animation.
+    */
+
+    animatedObjects.forEach(
+        (obj,i)=>{
+
+            if(!obj)
+                return;
+
+            obj.rotation.y +=
+                delta*(.12+i*.008);
+
+            obj.position.y =
+                obj.userData.baseY +
+                Math.sin(time*1.1+i)*.18;
+
+        }
+    );
+
+    giftObjects.forEach(gift=>{
+
+        if(!gift.userData.opening)
+            return;
+
+        gift.userData.openProgress = Math.min(
+            1,
+            gift.userData.openProgress + delta*2.4
+        );
+
+        const progress = gift.userData.openProgress;
+        const eased = 1-Math.pow(1-progress,3);
+
+        gift.userData.lid.position.y =
+            1.05 + eased*1.3;
+
+        gift.userData.lid.rotation.z =
+            -eased*.2;
+
+        gift.userData.bow.forEach(bow=>{
+            bow.visible = progress<1;
+        });
+
+        gift.userData.innerGlow.visible = progress>.35;
+
+        if(progress>=1)
+            gift.userData.opening = false;
+
+    });
+
+    /*
+       Stars rotate slowly.
+    */
+
+    stars.rotation.y =
+        time*.006;
+
+    stars.rotation.x =
+        Math.sin(time*.03)*.02;
+
+    dust.rotation.y =
+        -time*.01;
+
+    galaxy.rotation.y =
+        time*.006;
+
+    galaxy.rotation.x =
+        .28 + Math.sin(time*.04)*.015;
+
+    backgroundObjects.forEach((object,i)=>{
+
+        object.rotation.y += delta*(.002+i*.0007);
+
+    });
+
+    blackHole.disk.rotation.z += delta*.22;
+    blackHole.halo.rotation.z -= delta*.08;
+
+    universeBodies.forEach(body=>{
+
+        body.angle += delta*body.speed*.12;
+
+        body.planet.position.set(
+            Math.cos(body.angle)*body.orbitRadius,
+            Math.sin(body.angle*1.7)*body.orbitRadius*.18,
+            Math.sin(body.angle)*body.orbitRadius
+        );
+
+        body.planet.rotation.y += delta*.25;
+
+    });
+
+    /*
+       Rings.
+    */
+
+    rings.forEach(
+        (ring,i)=>{
+
+            ring.rotation.x +=
+                delta*(.12+i*.01);
+
+            ring.rotation.y +=
+                delta*(.08+i*.005);
+
+            ring.position.y +=
+                Math.sin(
+                    time*.6+i
+                )*.002;
+
+        }
+    );
+
+    /*
+       Photo cards.
+    */
+
+    photoMeshes.forEach(
+        (photo,i)=>{
+
+            photo.rotation.y =
+                Math.sin(
+                    time*.5+i
+                )*.035 +
+                (i%2===0 ? -.25 : .25);
+
+            photo.position.y =
+                photoPositions[i][1] +
+                Math.sin(
+                    time*.8+i
+                )*.25;
+
+        }
+    );
+
+    /*
+       Heart.
+    */
+
+    const heart =
+        animatedObjects[
+            animatedObjects.length-1
+        ];
+
+    if(heart){
+
+        heart.rotation.z =
+            Math.sin(time*.7)*.08;
+
+        heart.scale.setScalar(
+            heart.userData.baseScale+
+            Math.sin(time*1.5)*.04
+        );
+
+    }
+
+    updateUI();
+
+    renderer.render(
+        scene,
+        camera
+    );
+
+}
+
+renderer.compile(scene,camera);
+animate();
+
+
+/* ============================================================
+   UI UPDATE
+============================================================ */
+
+function updateUI(){
+
+    const p =
+        scrollProgress;
+
+    document.getElementById(
+        "progressBar"
+    ).style.width =
+        `${p*100}%`;
+
+    updateIntro(p);
+    updateChapter(p);
+    updateFinal(p);
+
+    /*
+       Letters occupy approximately
+       25% -> 70%.
+    */
+
+    if(p>=.24 && p<.70){
+
+        const letterProgress =
+            (p-.24)/.46;
+
+        const index =
+            Math.min(
+                CONFIG.letters.length-1,
+                Math.floor(
+                    letterProgress *
+                    CONFIG.letters.length
+                )
+            );
+
+        showLetter(index);
+
+    }else{
+
+        showLetter(-1);
+
+    }
+
+    /*
+       Favorites.
+    */
+
+    if(p>=.70 && p<.84){
+
+        favorites.style.opacity =
+            "1";
+
+    }else{
+
+        favorites.style.opacity =
+            "0";
+
+    }
+
+}
+
+
+/* ============================================================
+   RESIZE
+============================================================ */
+
+window.addEventListener(
+    "resize",
+    ()=>{
+
+        camera.aspect =
+            window.innerWidth /
+            window.innerHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+            window.innerWidth,
+            window.innerHeight
+        );
+
+        renderer.setPixelRatio(
+            Math.min(
+                window.devicePixelRatio || 1,
+                1.5
+            )
+        );
+
+    }
+);
+
+
+/* ============================================================
+   LOADING SCREEN
+============================================================ */
+
+let loadProgress=0;
+
+const loadInterval =
+    setInterval(()=>{
+
+        loadProgress +=
+            Math.random()*12;
+
+        if(loadProgress>=100){
+
+            loadProgress=100;
+
+            clearInterval(
+                loadInterval
+            );
+
+            setTimeout(()=>{
+
+                const loading =
+                    document.getElementById(
+                        "loading"
+                    );
+
+                loading.style.opacity =
+                    "0";
+
+                setTimeout(()=>{
+
+                    loading.style.display =
+                        "none";
+
+                },1000);
+
+            },350);
+
+        }
+
+        document.getElementById(
+            "loadFill"
+        ).style.width =
+            `${loadProgress}%`;
+
+    },100);
+
+
+/* ============================================================
+   KEYBOARD
+============================================================ */
+
+window.addEventListener(
+    "keydown",
+    e=>{
+
+        if(e.key==="Escape"){
+
+            document.getElementById(
+                "photoModal"
+            ).classList.remove(
+                "open"
+            );
+
+        }
+
+    }
+);
+
+
+/* ============================================================
+   TOUCH FRIENDLY SWIPE PARALLAX
+============================================================ */
+
+let touchStartY=0;
+
+window.addEventListener(
+    "touchstart",
+    e=>{
+
+        touchStartY =
+            e.touches[0].clientY;
+
+    },
+    {passive:true}
+);
+
+window.addEventListener(
+    "touchmove",
+    e=>{
+
+        const y =
+            e.touches[0].clientY;
+
+        targetMouseY =
+            (y-touchStartY) /
+            window.innerHeight;
+
+    },
+    {passive:true}
+);
+
+
+/* ============================================================
+   CONSOLE MESSAGE
+============================================================ */
+
+console.log(
+`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ ZIMAL BIRTHDAY WORLD
+ Three.js edition
+
+ Edit CONFIG at the top of
+ index.html.
+
+ Photos:
+ assets/photos/photo1.jpg
+ assets/photos/photo2.jpg
+ assets/photos/photo3.jpg
+ assets/photos/photo4.jpg
+ assets/photos/photo5.jpg
+
+ Everything else is inside
+ this single file.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`
+);
+
+</script>
+
+</body>
+</html>
